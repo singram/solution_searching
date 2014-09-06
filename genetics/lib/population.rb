@@ -36,10 +36,21 @@ class Population
     @rank_total ||= @population.map{|a| @fitness_score_function.call(@data_set, a) }.inject(&:+)
   end
 
+  def scores
+    @scores ||= ranked_list.map{|r| r[0] }
+  end
+
+  WEIGHTS = [0.50, 0.30, 0.15, 0.05]
   def biased_random_algorithm
-    idx = Random.rand(rank_total)
-    ranked_list.each do |fitness, algorithm|
-      return algorithm if idx >= (rank_total - fitness)
+    r = Random.rand
+    cumulative_weight = 0
+    WEIGHTS.each_with_index do |weight, i|
+      cumulative_weight += weight
+      if r < cumulative_weight
+        idx = (i+r)/WEIGHTS.size
+        idx *= @population.size
+        return ranked_list[idx.to_i][1]
+      end
     end
   end
 

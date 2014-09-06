@@ -26,6 +26,7 @@ class SolutionBreeder
     gen = 0
     while gen < @max_gen && !population.solution_found?
       @population = breed_new_population
+      pp @population.scores[0..5]
       gen += 1
     end
     evaluate_breeding_cycle(gen)
@@ -45,9 +46,31 @@ class SolutionBreeder
     new_pop = []
     new_pop << population.best_algorithm
     new_pop << population.n_best_algorithm(1)
-    new_pop += Array.new(@population_size-2){|i| AlgorithmFactory.generate(algorithm_input_count)}
+
+    while new_pop.size < @population_size
+      if Random.rand() < @prob_new
+        new_pop << AlgorithmFactory.generate(algorithm_input_count)
+      else
+        new_pop <<  mutate(@population.biased_random_algorithm, @mutation_rate)
+      end
+    end
     Population.new(new_pop, SolutionBreeder.method(:fitness_score), @data_set)
   end
+
+  def mutate(a, mutation_chance = 0.1)
+    if Random.rand() < mutation_chance
+      AlgorithmFactory.generate(algorithm_input_count)
+    else
+      node = a.clone
+      if node.is_a?(Node)
+        node.function_params = a.function_params.map{|child| mutate(child) }
+      end
+      node
+    end
+  end
+
+  # def self.crossover(a1, a2)
+  # end
 
   def self.fitness_score(data_set, algorithm)
     data_set.map do| params, value|
