@@ -51,7 +51,8 @@ class SolutionBreeder
       if Random.rand() < @prob_new
         new_pop << AlgorithmFactory.generate(algorithm_input_count)
       else
-        new_pop <<  mutate(@population.biased_random_algorithm, @mutation_rate)
+        cross_breed = crossover(@population.biased_random_algorithm, @population.biased_random_algorithm, @breeding_rate)
+        new_pop <<  mutate(cross_breed, @mutation_rate)
       end
     end
     Population.new(new_pop, SolutionBreeder.method(:fitness_score), @data_set)
@@ -69,8 +70,17 @@ class SolutionBreeder
     end
   end
 
-  # def self.crossover(a1, a2)
-  # end
+  def crossover(a1, a2, swap_chance = 0.7, top=true)
+    if Random.rand() < swap_chance && !top
+      result = a2.deep_copy
+    else
+      result = a1.deep_copy
+      if result.is_a?(Node) && a2.is_a?(Node)
+        result.function_params = a1.function_params.map{|c1| crossover(c1, a2.function_params.sample, swap_chance, false) }
+      end
+    end
+    result
+  end
 
   def self.fitness_score(data_set, algorithm)
     data_set.map do| params, value|
